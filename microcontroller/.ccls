@@ -1,0 +1,4 @@
+gcc
+-DUBRRH
+-I/usr/share/arduino/hardware/archlinux-arduino/avr/cores/arduino/
+-I/usr/avr/include/
