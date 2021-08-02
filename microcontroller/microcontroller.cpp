@@ -17,4 +17,6 @@ void setup() {
   Serial.write(version);
 }
 
-void loop() {}
+void loop() {
+  //
+}
