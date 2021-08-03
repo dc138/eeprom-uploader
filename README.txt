@@ -6,9 +6,13 @@ A very simple EEPROM programmer designed to work with the VSA.
 Protocol Explanation
 ====================
 
+Initial packet & handshake
+--------------------------
+
 The uploader program will start by opening the serial port that the microcontroller
 is connected to. Then, it will wait unit the microcontroller sends the initial 
-packet with the version it is running. It will look like this:
+packet with the version it is running. If the versions match, the PC will procede
+and send the state flags. It will look like this:
 
  * (PC) Open port
  * (MC) Auto reset
