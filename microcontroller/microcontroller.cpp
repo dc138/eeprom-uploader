@@ -18,5 +18,11 @@ void setup() {
 }
 
 void loop() {
-  //
+  if (Serial.available() > 1) {
+    uint8_t data_high = 0x00;
+    uint8_t data_low  = 0x00;
+
+    Serial.readBytes(&data_high, 1);
+    Serial.readBytes(&data_low, 1);
+  }
 }

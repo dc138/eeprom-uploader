@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++20
-LDFLAGS  := -L/usr/lib -lstdc++ -lserial
+LDFLAGS  := -L/usr/lib -lstdc++ -lserial -lfmt
 
 FLAGS_RELEASE := -Ofast -flto -Werror -DNDEBUG
 FLAGS_DEBUG   := -O0 -g -D_DEBUG
