@@ -12,12 +12,17 @@ namespace sp = stypox;
 constexpr uint8_t version = 0x02;
 
 typedef struct state_flags_t {
-  bool receiving = false;
-  bool sending   = false;
-  bool high      = false;
-  bool low       = false;
-  bool ready     = false;
-  bool setup     = true;
+  bool    receiving      = false;
+  bool    sending        = false;
+  bool    high           = false;
+  bool    low            = false;
+  bool    ready          = false;
+  bool    setup          = true;
+  bool    handshake      = false;
+  int     rec_size       = -1;
+  uint8_t rec_buffer_pos = 0x00;
+  uint8_t rec_buffer_high[256];
+  uint8_t rec_buffer_low[256];
 } state_flags_t;
 
 typedef struct args_t {
@@ -84,7 +89,16 @@ int main(int argc, const char* argv[]) {
 
   fmt::print("[INF] Port opened\n[INF] Sending initial packet\n");
 
+  // TODO: Check files
+  // TODO: Validate send / receive
+
   do {
+    if (state.sending) {
+      // TODO: Send data
+      fmt::print("[ERR] Reached unimplemented send block, aborting...\n");
+      break;
+    }
+
     if (port.GetNumberOfBytesAvailable() > 1) {
       uint8_t data_high = 0x00;
       uint8_t data_low  = 0x00;
@@ -94,8 +108,11 @@ int main(int argc, const char* argv[]) {
 
       fmt::print("[REC] {:#x} {:#x}\n", data_high, data_low);
 
-      if (state.receiving) {
-        //
+      if (state.receiving && state.rec_size >= 0) {
+        // TODO: Receive data
+        fmt::print("[ERR] Reached unimplemented receive block, aborting...\n");
+        break;
+
       } else {
         if (data_high == 0x01) {
           fmt::print("[INF] Controller is ready\n");
@@ -105,13 +122,13 @@ int main(int argc, const char* argv[]) {
             exit(2);
           }
 
-          state.ready = true;
-          state.setup = false;
+          state.handshake = true;
+          state.setup     = false;
 
           fmt::print("[INF] Performing initial handshake\n");
 
-          port.WriteByte((uint8_t)0x02);  // Control packet: number of packets that we will send
-          port.WriteByte((uint8_t)0x00);
+          port.WriteByte((uint8_t)0x02);
+          port.WriteByte((uint8_t)0x01);
           fmt::print("[OUT] {:#x} {:#x}\n", 0x02, 0x02);
 
           fmt::print("[INF] Sending parameters\n");
@@ -125,18 +142,38 @@ int main(int argc, const char* argv[]) {
           fmt::print(
               "[OUT] {:#x} {:#x}\n", args.receive_file.empty() ? 0x00 : 0x01, args.send_file.empty() ? 0x00 : 0x01);
 
+        } else if (data_high == 0x03) {
+          fmt::print("[ERR] Received abort packed with parameter {:#x}, aborting...\n", data_low);
+          break;
+
+        } else if (data_high == 0x04) {
+          fmt::print("[DBG] Received debug packet with parameter {:#x}\n", data_low);
+
+        } else if (data_high == 0x05) {
+          fmt::print("[INF] Handshake completed\n");
+          state.handshake = false;
+
+          if (!args.receive_file.empty()) {
+            state.receiving = true;
+            state.rec_size  = 0xFF;
+          }
+
+          if (!args.send_file.empty()) {
+            state.sending = true;
+          }
+
         } else {
           fmt::print("[ERR] Received unknown data packet, aborting...\n");
-          exit(3);
+          break;
         }
       }
     }
-  } while (state.receiving || state.ready || state.setup);
+  } while (state.receiving || state.ready || state.setup || state.handshake || state.sending);
 
   std::cout << "[INF] Connection ended\n";
 
   port.Close();
-  std::cout << "[INF] Closed port";
+  std::cout << "[INF] Closed port\n";
 
   return 0;
 }
