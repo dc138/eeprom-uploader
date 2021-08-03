@@ -82,7 +82,7 @@ int main(int argc, const char* argv[]) {
   port.SetFlowControl(ls::FlowControl::FLOW_CONTROL_NONE);
   port.SetParity(ls::Parity::PARITY_NONE);
 
-  fmt::print("[INF] Port opened\n[INF] Waiting for controller\n");
+  fmt::print("[INF] Port opened\n[INF] Sending initial packet\n");
 
   do {
     if (port.GetNumberOfBytesAvailable() > 1) {
@@ -111,7 +111,7 @@ int main(int argc, const char* argv[]) {
           fmt::print("[INF] Performing initial handshake\n");
 
           port.WriteByte((uint8_t)0x02);  // Control packet: number of packets that we will send
-          port.WriteByte((uint8_t)0x02);  // Control packet: we are sending two more packets
+          port.WriteByte((uint8_t)0x00);
           fmt::print("[OUT] {:#x} {:#x}\n", 0x02, 0x02);
 
           fmt::print("[INF] Sending parameters\n");
