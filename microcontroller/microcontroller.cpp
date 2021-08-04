@@ -32,7 +32,16 @@ void panic() {
 
 void loop() {
   if (state.sending) {
-    // TODO: Send data
+    // TODO: Send  correct data
+    Serial.write(0x08);
+    Serial.write(0xFF);
+
+    uint8_t i = 0x00;
+
+    do {
+      Serial.write(i);
+      Serial.write(0xFF - i);
+    } while (i++ < 0xFF);
   }
 
   if (Serial.available() > 1) {

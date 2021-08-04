@@ -21,7 +21,7 @@ typedef struct state_flags_t {
   bool    handshake      = false;
   bool    debug          = false;
   bool    waiting        = false;
-  int     rec_size       = -1;
+  uint8_t rec_size       = 0x00;
   uint8_t rec_buffer_pos = 0x00;
   uint8_t rec_buffer_high[256];
   uint8_t rec_buffer_low[256];
@@ -123,10 +123,22 @@ int main(int argc, const char* argv[]) {
 
       fmt::print(fmt::fg(fmt::terminal_color::bright_green), "[REC] {:#x} {:#x}\n", data_high, data_low);
 
-      if (state.receiving && state.rec_size >= 0) {
-        // TODO: Receive data
-        fmt::print(fmt::fg(fmt::terminal_color::red), "[ERR] Reached unimplemented receive block, aborting...\n");
-        break;
+      if (state.receiving) {
+        // TODO: Write data to file
+
+        state.rec_buffer_high[state.rec_buffer_pos] = data_high;
+        state.rec_buffer_low[state.rec_buffer_pos]  = data_low;
+
+        if (state.rec_size == 0) {
+          state.rec_buffer_pos = 0;
+          state.receiving      = false;
+
+          fmt::print("[INF] Done receiving data\n");
+
+        } else {
+          state.rec_size--;
+          state.rec_buffer_pos++;
+        }
 
       } else {
         if (data_high == 0x01) {
@@ -172,8 +184,7 @@ int main(int argc, const char* argv[]) {
           state.handshake = false;
 
           if (!args.receive_file.empty()) {
-            state.receiving = true;
-            state.rec_size  = 0xFF;
+            state.waiting = true;
 
           } else if (!args.send_file.empty()) {
             state.sending = true;
@@ -185,6 +196,13 @@ int main(int argc, const char* argv[]) {
         } else if (data_high == 0x07) {
           state.waiting = false;
           fmt::print("[INF] Done sending data, controller succesfully wrote {:#x} words\n", data_low);
+
+        } else if (data_high == 0x08) {
+          state.receiving = true;
+          state.waiting   = false;
+          state.rec_size  = data_low;
+
+          fmt::print("[INF] Receiving {:#x} words of data\n", data_low);
 
         } else {
           fmt::print(fmt::fg(fmt::terminal_color::red), "[ERR] Received unknown data packet, aborting...\n");
