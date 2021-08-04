@@ -3,15 +3,21 @@
 constexpr uint8_t version = 0x02;
 
 typedef struct state_flags_t {
-  bool    receiving_data  = false;
-  bool    receiving_flags = false;
-  bool    sending         = false;
-  bool    high            = false;
-  bool    low             = false;
-  uint8_t rec_size        = -1;
-  uint8_t rec_buff_high[256];
-  uint8_t rec_buff_low[256];
-  uint8_t rec_buff_pos = 0x00;
+  bool receiving_data  = false;
+  bool receiving_flags = false;
+  bool sending         = false;
+  bool high            = false;
+  bool low             = false;
+
+  uint8_t recv_size           = 0x00;
+  uint8_t recv_buff_pos       = 0x00;
+  uint8_t recv_buff_high[256] = {};
+  uint8_t recv_buff_low[256]  = {};
+
+  uint8_t send_size           = 0x00;
+  uint8_t send_buff_pos       = 0x00;
+  uint8_t send_buff_high[256] = {};
+  uint8_t send_buff_low[256]  = {};
 } state_flags_t;
 
 state_flags_t state;
@@ -32,7 +38,7 @@ void panic() {
 
 void loop() {
   if (state.sending) {
-    // TODO: Send  correct data
+    // TODO: Send correct data
     Serial.write(0x08);
     Serial.write(0xFF);
 
@@ -42,6 +48,8 @@ void loop() {
       Serial.write(i);
       Serial.write(0xFF - i);
     } while (i++ < 0xFF);
+
+    state.sending = false;
   }
 
   if (Serial.available() > 1) {
@@ -53,35 +61,35 @@ void loop() {
 
     if (state.receiving_data) {
       // TODO: Write this data to EEPROM
-      state.rec_buff_high[state.rec_buff_pos] = data_high;
-      state.rec_buff_low[state.rec_buff_pos]  = data_low;
+      state.recv_buff_high[state.recv_buff_pos] = data_high;
+      state.recv_buff_low[state.recv_buff_pos]  = data_low;
 
       if (state.rec_size == 0) {
-        state.rec_buff_pos   = 0;
+        state.recv_buff_pos  = 0;
         state.receiving_data = false;
 
         Serial.write(0x07);
         Serial.write(0xFF);  // TODO: Check number of correct words sent
       } else {
         state.rec_size--;
-        state.rec_buff_pos++;
+        state.recv_buff_pos++;
       }
 
     } else if (state.receiving_flags) {
-      switch (state.rec_buff_pos) {
+      switch (state.recv_buff_pos) {
         case 0x00:
           state.high = data_high;
           state.low  = data_low;
 
           state.rec_size--;
-          state.rec_buff_pos++;
+          state.recv_buff_pos++;
           break;
 
         case 0x01:
           state.sending = data_high;
 
-          state.rec_size     = 0;
-          state.rec_buff_pos = 0;
+          state.rec_size      = 0;
+          state.recv_buff_pos = 0;
 
           Serial.write(0x05);
           Serial.write(0x01);
@@ -95,8 +103,8 @@ void loop() {
 
           panic();
 
-          state.rec_size     = 0;
-          state.rec_buff_pos = 0;
+          state.rec_size      = 0;
+          state.recv_buff_pos = 0;
           break;
       }
 
