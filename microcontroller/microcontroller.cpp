@@ -48,12 +48,10 @@ void loop() {
     do {
       if (!state.low) {
         state.send_buff_high[i] = eeprom.read_high();
-        delay(TIMEOUT_ACTION);
       }
 
       if (!state.high) {
         state.send_buff_low[i] = eeprom.read_low();
-        delay(TIMEOUT_ACTION);
       }
 
       eeprom.next();
@@ -95,14 +93,14 @@ void loop() {
           if (!state.low) {
             do {
               eeprom.write_high(state.recv_buff_high[i]);
-              delay(TIMEOUT_ACTION);
-            } while ((attempts++ < 10) && (eeprom.read_high() != state.recv_buff_high[i]));
-          }
 
-          if (eeprom.read_high() != state.recv_buff_high[i]) {
-            Serial.write(0x04);
-            Serial.write(0x00);
-            errors++;
+            } while ((attempts++ < 10) && (eeprom.read_high() != state.recv_buff_high[i]));
+
+            if (eeprom.read_high() != state.recv_buff_high[i]) {
+              Serial.write(0x04);
+              Serial.write(0x00);
+              errors++;
+            }
           }
 
           attempts = 0;
@@ -110,14 +108,14 @@ void loop() {
           if (!state.high) {
             do {
               eeprom.write_low(state.recv_buff_low[i]);
-              delay(TIMEOUT_ACTION);
-            } while ((attempts++ < 10) && (eeprom.read_low() != state.recv_buff_low[i]));
-          }
 
-          if (eeprom.read_low() != state.recv_buff_low[i]) {
-            Serial.write(0x04);
-            Serial.write(0xFF);
-            errors++;
+            } while ((attempts++ < 10) && (eeprom.read_low() != state.recv_buff_low[i]));
+
+            if (eeprom.read_low() != state.recv_buff_low[i]) {
+              Serial.write(0x04);
+              Serial.write(0xFF);
+              errors++;
+            }
           }
 
           eeprom.next();

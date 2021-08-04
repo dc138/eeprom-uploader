@@ -16,11 +16,7 @@ typedef unsigned short word_t;
 #define BIN6(val) (((val)&0x40ll) ? 1 : 0)
 #define BIN7(val) (((val)&0x80ll) ? 1 : 0)
 
-#define TIMEOUT_READ 150
-#define TIMEOUT_WRITE 150
-#define TIMEOUT_ENABLE 150
-#define TIMEOUT_ACTION 20
-#define TIMEOUT_READY 250
+#define TIMEOUT 1
 
 class EEPROM {
  public:
@@ -141,17 +137,17 @@ void EEPROM::init() {
   digitalWrite(_high_out, HIGH);
   digitalWrite(_high_enable, HIGH);
 
-  delay(TIMEOUT_READY);
+  delay(TIMEOUT);
 }
 
 void EEPROM::next() {
   digitalWrite(_addr_next, HIGH);
   digitalWrite(_addr_clk, HIGH);
-  delay(1);
+  delay(TIMEOUT);
 
   digitalWrite(_addr_clk, LOW);
   digitalWrite(_addr_next, LOW);
-  delay(1);
+  delay(TIMEOUT);
 
   addr++;
 }
@@ -167,13 +163,13 @@ byte_t EEPROM::read_low() {
   pinMode(_data5, INPUT_PULLUP);
   pinMode(_data6, INPUT_PULLUP);
   pinMode(_data7, INPUT_PULLUP);
-  delay(TIMEOUT_ACTION);
+  delay(TIMEOUT);
 
   digitalWrite(_low_enable, LOW);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_out, LOW);
-  delayMicroseconds(TIMEOUT_READ);
+  delay(TIMEOUT);
 
   low |= digitalRead(_data0) << 0;
   low |= digitalRead(_data1) << 1;
@@ -185,10 +181,10 @@ byte_t EEPROM::read_low() {
   low |= digitalRead(_data7) << 7;
 
   digitalWrite(_low_out, HIGH);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_enable, HIGH);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   return low;
 }
@@ -204,13 +200,13 @@ byte_t EEPROM::read_high() {
   pinMode(_data5, INPUT_PULLUP);
   pinMode(_data6, INPUT_PULLUP);
   pinMode(_data7, INPUT_PULLUP);
-  delay(TIMEOUT_ACTION);
+  delay(TIMEOUT);
 
   digitalWrite(_high_enable, LOW);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   digitalWrite(_high_out, LOW);
-  delayMicroseconds(TIMEOUT_READ);
+  delay(TIMEOUT);
 
   high |= digitalRead(_data0) << 0;
   high |= digitalRead(_data1) << 1;
@@ -222,10 +218,10 @@ byte_t EEPROM::read_high() {
   high |= digitalRead(_data7) << 7;
 
   digitalWrite(_high_out, HIGH);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_high_enable, HIGH);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   return high;
 }
@@ -248,19 +244,19 @@ void EEPROM::write_low(byte_t data) {
   digitalWrite(_data5, BIN5(data) ? HIGH : LOW);
   digitalWrite(_data6, BIN6(data) ? HIGH : LOW);
   digitalWrite(_data7, BIN7(data) ? HIGH : LOW);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_enable, LOW);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_in, LOW);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_in, HIGH);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_enable, HIGH);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   pinMode(_data0, INPUT_PULLUP);
   pinMode(_data1, INPUT_PULLUP);
@@ -290,19 +286,19 @@ void EEPROM::write_high(byte_t data) {
   digitalWrite(_data5, BIN5(data) ? HIGH : LOW);
   digitalWrite(_data6, BIN6(data) ? HIGH : LOW);
   digitalWrite(_data7, BIN7(data) ? HIGH : LOW);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_high_enable, LOW);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   digitalWrite(_high_in, LOW);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_high_in, HIGH);
-  delayMicroseconds(TIMEOUT_WRITE);
+  delay(TIMEOUT);
 
   digitalWrite(_low_enable, HIGH);
-  delayMicroseconds(TIMEOUT_ENABLE);
+  delay(TIMEOUT);
 
   pinMode(_data0, INPUT_PULLUP);
   pinMode(_data1, INPUT_PULLUP);

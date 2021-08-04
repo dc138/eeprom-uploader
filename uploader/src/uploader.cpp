@@ -240,8 +240,8 @@ int main(int argc, const char* argv[]) {
           uint8_t i = 0;
 
           do {
-            recvf.put((uint8_t)(state.recv_buffer_high[i]));
-            recvf.put((uint8_t)(state.recv_buffer_low[i]));
+            if (!args.low) recvf.put((uint8_t)(state.recv_buffer_high[i]));
+            if (!args.high) recvf.put((uint8_t)(state.recv_buffer_low[i]));
             /* fmt::print(fmt::fg(fmt::terminal_color::yellow),
                        "[DBG] Writting {:#x} {:#x} to {}\n",
                        state.rec_buffer_high[i],
