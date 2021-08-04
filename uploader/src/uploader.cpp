@@ -158,11 +158,11 @@ int main(int argc, const char* argv[]) {
           sendf.read((char*)(state.send_buffer_low) + i, 1);
         }
 
-        fmt::print(fmt::fg(fmt::terminal_color::yellow),
+        /*fmt::print(fmt::fg(fmt::terminal_color::yellow),
                    "[DBG] Send buffer {:#x} : {:#x} {:#x}\n",
                    i,
                    state.send_buffer_high[i],
-                   state.send_buffer_low[i]);
+                   state.send_buffer_low[i]);*/
       } while (i++ < 0xFF);
     }
 
@@ -214,6 +214,7 @@ int main(int argc, const char* argv[]) {
         send_word(port, state.send_buffer_high[i], state.send_buffer_low[i]);
       } while (i++ < 0xFF);
 
+      fmt::print("[INF] Waiting for controller to write data\n");
       state.sending = false;
       state.waiting = true;
     }
@@ -288,6 +289,7 @@ int main(int argc, const char* argv[]) {
           state.handshake = false;
 
           if (!args.receive_file.empty()) {
+            fmt::print("[INF] Waiting for controller to read and send data\n");
             state.waiting = true;
 
           } else if (!args.send_file.empty()) {
@@ -299,7 +301,7 @@ int main(int argc, const char* argv[]) {
 
         } else if (data_high == 0x07) {
           state.waiting = false;
-          fmt::print("[INF] Done sending data, controller succesfully wrote {:#x} words\n", data_low);
+          fmt::print("[INF] Controller wrote data with {:#x} errors\n", data_low);
 
         } else if (data_high == 0x08) {
           state.receiving = true;
