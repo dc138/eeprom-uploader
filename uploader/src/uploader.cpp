@@ -39,6 +39,8 @@ typedef struct args_t {
 state_flags_t state;
 args_t        args;
 
+void send_word(ls::SerialPort& port, uint8_t data_high, uint8_t data_low);
+
 int main(int argc, const char* argv[]) {
   sp::ArgParser parser {
       std::make_tuple(sp::HelpSection("\nAvailable options:"),
@@ -98,16 +100,12 @@ int main(int argc, const char* argv[]) {
     if (state.sending) {
       // TODO: Send real data
       fmt::print("[INF] Sending data to controller\n");
+      send_word(port, 0x06, 0xFF);
+
       uint8_t i = 0;
 
-      port.WriteByte((uint8_t)0x06);
-      port.WriteByte((uint8_t)0xFF);
-      fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", 0x06, 0xFF);
-
       do {
-        port.WriteByte((uint8_t)i);
-        port.WriteByte((uint8_t)(0xFF - i));
-        fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", 0x00, 0x00);
+        send_word(port, i, 0xFF - i);
       } while (i++ < 0xFF);
 
       state.sending = false;
@@ -155,20 +153,9 @@ int main(int argc, const char* argv[]) {
 
           fmt::print("[INF] Performing initial handshake\n");
 
-          port.WriteByte((uint8_t)0x02);
-          port.WriteByte((uint8_t)0x01);
-          fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", 0x02, 0x02);
-
-          port.WriteByte((uint8_t)args.high);
-          port.WriteByte((uint8_t)args.low);
-          fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", args.high, args.low);
-
-          port.WriteByte((uint8_t)(args.receive_file.empty() ? 0x00 : 0x01));
-          port.WriteByte((uint8_t)(args.send_file.empty() ? 0x00 : 0x01));
-          fmt::print(fmt::fg(fmt::terminal_color::blue),
-                     "[OUT] {:#x} {:#x}\n",
-                     args.receive_file.empty() ? 0x00 : 0x01,
-                     args.send_file.empty() ? 0x00 : 0x01);
+          send_word(port, 0x02, 0x01);
+          send_word(port, args.high, args.low);
+          send_word(port, args.receive_file.empty() ? 0x00 : 0x01, args.send_file.empty() ? 0x00 : 0x01);
 
         } else if (data_high == 0x03) {
           fmt::print(fmt::fg(fmt::terminal_color::red),
@@ -219,4 +206,11 @@ int main(int argc, const char* argv[]) {
   std::cout << "[INF] Closed port\n";
 
   return 0;
+}
+
+void send_word(ls::SerialPort& port, uint8_t data_high, uint8_t data_low) {
+  port.WriteByte((uint8_t)data_high);
+  port.WriteByte((uint8_t)data_low);
+
+  fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", data_high, data_low);
 }
