@@ -39,7 +39,7 @@ internal_release_prep:
 	@echo -e "[\033[34mINFO\033[0m] Doing a release build"
 	$(eval CXXFLAGS += $(FLAGS_RELEASE))
 
-internal_perform_build: $(CPCH) $(BINARY_DIR)/$(TARGET) $(FSPIRV) $(VSPIRV)
+internal_perform_build: $(BINARY_DIR)/$(TARGET)
 
 release: internal_release_prep internal_perform_build
 debug: internal_debug_prep internal_perform_build

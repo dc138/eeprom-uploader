@@ -33,6 +33,10 @@ typedef struct state_t {
   bool debug     = false;
   bool waiting   = false;
 
+  uint16_t total_bytes   = 0;
+  uint16_t written_bytes = 0;
+  uint16_t error_bytes   = 0;
+
   uint8_t recv_size             = 0x00;
   uint8_t recv_buffer_pos       = 0x00;
   uint8_t recv_buffer_high[256] = {};
@@ -137,6 +141,8 @@ int main(int argc, const char* argv[]) {
           exit(9);
         }
 
+        state.total_bytes = 256;
+
       } else {
         if (std::filesystem::file_size(args.send_file) != 512) {
           fmt::print(fmt::fg(fmt::terminal_color::red),
@@ -144,6 +150,8 @@ int main(int argc, const char* argv[]) {
                      args.send_file);
           exit(9);
         }
+
+        state.total_bytes = 512;
       }
 
       fmt::print("[INF] Reading {}...\n", args.send_file);
@@ -226,7 +234,11 @@ int main(int argc, const char* argv[]) {
       port.ReadByte(data_high);
       port.ReadByte(data_low);
 
-      fmt::print(fmt::fg(fmt::terminal_color::bright_green), "[REC] {:#x} {:#x}\n", data_high, data_low);
+      fmt::print(fmt::fg(fmt::terminal_color::bright_green),
+                 "{}[REC] {:#x} {:#x}                                                      \n",
+                 state.waiting ? "\r" : "",
+                 data_high,
+                 data_low);
 
       if (state.receiving) {
         state.recv_buffer_high[state.recv_buffer_pos] = data_high;
@@ -301,7 +313,7 @@ int main(int argc, const char* argv[]) {
 
         } else if (data_high == 0x07) {
           state.waiting = false;
-          fmt::print("[INF] Controller wrote data with {:#x} errors\n", data_low);
+          fmt::print("[INF] Controller wrote {} bytes of data with {} errors\n", state.total_bytes, data_low);
 
         } else if (data_high == 0x08) {
           state.receiving = true;
@@ -309,6 +321,37 @@ int main(int argc, const char* argv[]) {
           state.recv_size = data_low;
 
           fmt::print("[INF] Receiving {:#x} words of data\n", data_low);
+
+        } else if (data_high == 0x09) {
+          state.error_bytes++;
+          fmt::print(fmt::fg(fmt::terminal_color::red),
+                     "[ERR] Controller couldn't write address {:#x} of high EEPROM\n",
+                     data_low);
+
+          fmt::print("\r[INF] Controller wrote {}/{} words with {} errors",
+                     state.written_bytes + state.error_bytes,
+                     state.total_bytes,
+                     state.error_bytes);
+          std::cout.flush();
+
+        } else if (data_high == 0x0a) {
+          state.error_bytes++;
+          fmt::print(fmt::fg(fmt::terminal_color::red),
+                     "[ERR] Controller couldn't write address {:#x} of low EEPROM\n",
+                     data_low);
+
+          fmt::print("\r[INF] Controller wrote {}/{} words with {} errors",
+                     state.written_bytes + state.error_bytes,
+                     state.total_bytes,
+                     state.error_bytes);
+          std::cout.flush();
+
+        } else if (data_high == 0x0b) {
+          fmt::print("\r[INF] Controller wrote {}/{} words with {} errors",
+                     ++state.written_bytes + state.error_bytes,
+                     state.total_bytes,
+                     state.error_bytes);
+          std::cout.flush();
 
         } else {
           fmt::print(fmt::fg(fmt::terminal_color::red), "[ERR] Received unknown data packet, aborting...\n");
