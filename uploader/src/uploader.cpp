@@ -52,10 +52,13 @@ typedef struct args_t {
   std::string port         = "";
   std::string send_file    = "";
   std::string receive_file = "";
-  bool        help         = false;
-  bool        high         = false;
-  bool        low          = false;
-  bool        overwrite    = false;
+
+  bool help      = false;
+  bool high      = false;
+  bool low       = false;
+  bool overwrite = false;
+  bool verbose   = false;
+  bool debug     = false;
 } args_t;
 
 state_t state;
@@ -71,6 +74,8 @@ int main(int argc, const char* argv[]) {
           sp::SwitchOption {"high", args.high, sp::args("-h", "--high"), "Use high mode"},
           sp::SwitchOption {"low", args.low, sp::args("-l", "--low"), "Use low mode"},
           sp::SwitchOption {"overwrite", args.overwrite, sp::args("-o", "--overwrite"), "Overwrite output file"},
+          sp::SwitchOption {"verbose", args.verbose, sp::args("-v", "--verbose"), "Use verbose mode"},
+          sp::SwitchOption {"debug", args.debug, sp::args("-d", "--debug"), "use debug mode"},
           sp::Option {"port", args.port, sp::args("-p", "--port"), "Port to use", true},
           sp::Option {"rfile", args.receive_file, sp::args("-r", "--receive"), "File to receive into"},
           sp::Option {"sfile", args.send_file, sp::args("-s", "--send"), "File to send"}),
@@ -166,11 +171,13 @@ int main(int argc, const char* argv[]) {
           sendf.read((char*)(state.send_buffer_low) + i, 1);
         }
 
-        /*fmt::print(fmt::fg(fmt::terminal_color::yellow),
-                   "[DBG] Send buffer {:#x} : {:#x} {:#x}\n",
-                   i,
-                   state.send_buffer_high[i],
-                   state.send_buffer_low[i]);*/
+        if (args.debug) {
+          fmt::print(fmt::fg(fmt::terminal_color::yellow),
+                     "[DBG] Send buffer {:#x} : {:#x} {:#x}\n",
+                     i,
+                     state.send_buffer_high[i],
+                     state.send_buffer_low[i]);
+        }
       } while (i++ < 0xFF);
     }
 
@@ -234,11 +241,13 @@ int main(int argc, const char* argv[]) {
       port.ReadByte(data_high);
       port.ReadByte(data_low);
 
-      fmt::print(fmt::fg(fmt::terminal_color::bright_green),
-                 "{}[REC] {:#x} {:#x}                                                      \n",
-                 state.waiting ? "\r" : "",
-                 data_high,
-                 data_low);
+      if (args.verbose) {
+        fmt::print(fmt::fg(fmt::terminal_color::bright_green),
+                   "{}[REC] {:#x} {:#x}                                                      \n",
+                   state.waiting ? "\r" : "",
+                   data_high,
+                   data_low);
+      }
 
       if (state.receiving) {
         state.recv_buffer_high[state.recv_buffer_pos] = data_high;
@@ -254,11 +263,14 @@ int main(int argc, const char* argv[]) {
           do {
             if (!args.low) recvf.put((uint8_t)(state.recv_buffer_high[i]));
             if (!args.high) recvf.put((uint8_t)(state.recv_buffer_low[i]));
-            /* fmt::print(fmt::fg(fmt::terminal_color::yellow),
-                       "[DBG] Writting {:#x} {:#x} to {}\n",
-                       state.rec_buffer_high[i],
-                       state.rec_buffer_low[i],
-                       args.receive_file);*/
+
+            if (args.debug) {
+              fmt::print(fmt::fg(fmt::terminal_color::yellow),
+                         "[DBG] Writting {:#x} {:#x} to {}\n",
+                         state.recv_buffer_high[i],
+                         state.recv_buffer_low[i],
+                         args.receive_file);
+            }
           } while (i++ < 0xFF);
 
           recvf.flush();
@@ -313,7 +325,7 @@ int main(int argc, const char* argv[]) {
 
         } else if (data_high == 0x07) {
           state.waiting = false;
-          fmt::print("[INF] Controller wrote {} bytes of data with {} errors\n", state.total_bytes, data_low);
+          fmt::print("\r[INF] Controller wrote {} bytes of data with {} errors\n", state.total_bytes, data_low);
 
         } else if (data_high == 0x08) {
           state.receiving = true;
@@ -325,7 +337,8 @@ int main(int argc, const char* argv[]) {
         } else if (data_high == 0x09) {
           state.error_bytes++;
           fmt::print(fmt::fg(fmt::terminal_color::red),
-                     "[ERR] Controller couldn't write address {:#x} of high EEPROM\n",
+                     "{}[ERR] Controller couldn't write address {:#x} of high EEPROM\n",
+                     args.verbose ? "" : "\r",
                      data_low);
 
           fmt::print("\r[INF] Controller wrote {}/{} words with {} errors",
@@ -337,7 +350,8 @@ int main(int argc, const char* argv[]) {
         } else if (data_high == 0x0a) {
           state.error_bytes++;
           fmt::print(fmt::fg(fmt::terminal_color::red),
-                     "[ERR] Controller couldn't write address {:#x} of low EEPROM\n",
+                     "{}[ERR] Controller couldn't write address {:#x} of low EEPROM\n",
+                     args.verbose ? "" : "\r",
                      data_low);
 
           fmt::print("\r[INF] Controller wrote {}/{} words with {} errors",
@@ -384,5 +398,5 @@ void send_word(ls::SerialPort& port, uint8_t data_high, uint8_t data_low) {
   port.WriteByte((uint8_t)data_high);
   port.WriteByte((uint8_t)data_low);
 
-  fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", data_high, data_low);
+  if (args.verbose) fmt::print(fmt::fg(fmt::terminal_color::blue), "[OUT] {:#x} {:#x}\n", data_high, data_low);
 }

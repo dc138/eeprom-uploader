@@ -1,0 +1,96 @@
+x = 1
+y = 0
+
+loop
+
+z = x + y
+x = y
+y = z
+
+repeat
+
+------------------
+
+Set ACC to 1
+Store in X
+Set ACC to 0
+Store in Y
+
+[0]
+Load X
+Add Y
+Jump to [1] if overflow
+Output ACC
+Store Z
+Load Y
+Store X
+Load Z
+Store Y
+Jump to [0]
+
+[1]
+Halt
+
+[X]
+[Y]
+[Z]
+
+------------------
+
+LDI 1
+STA X
+LDI 0
+STA Y
+
+[0]
+LDA X
+ADA Y
+JPO [1]
+OTC
+STA Z
+
+LDA Y
+STA X
+LDA Z
+STA Y
+JMP [0]
+
+[1]
+HLT
+
+-----------------
+
+00 : 90 LDI
+01 : 01 $1
+02 : 20 STA
+03 : 1C %X
+04 : 90 LDI
+05 : 00 $0
+06 : 20 STA
+07 : 1D %Y
+08 : 10 LDA (0)
+09 : 1C %X
+0A : 30 ADA
+0B : 1D %Y
+0C : 50 JPO
+0D : 1B %1
+0E : F0 OTC
+0F : 20 STA
+10 : 1E %Z
+11 : 10 LDA
+12 : 1D %Y
+13 : 20 STA
+14 : 1C %X
+15 : 10 LDA
+16 : 1E %Z
+17 : 20 STA
+18 : 1D %Y
+19 : 80 JMP
+1A : 08 %0
+1B : 00 HLT (1)
+1C : 00     (X)
+1D : 00     (Y)
+1E : 00     (Z)
+1F : 00
+  ···
+FF : 00
