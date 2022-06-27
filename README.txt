@@ -1,7 +1,8 @@
 Uploader
 ========
 
-A very simple EEPROM programmer designed to work with an arduino mini
+A simple dual EEPROM programmer designed to work with an arduino mini and
+some breadboards
 
 Protocol Explanation
 ====================
