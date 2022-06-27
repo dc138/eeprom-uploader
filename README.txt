@@ -1,7 +1,7 @@
 Uploader
 ========
 
-A very simple EEPROM programmer designed to work with the VSA.
+A very simple EEPROM programmer designed to work with an arduino mini
 
 Protocol Explanation
 ====================
